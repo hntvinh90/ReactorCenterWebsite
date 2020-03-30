@@ -1,0 +1,149 @@
+{% extends 'static/html/mainframe.html' %}
+
+{% load bootstrap4 %}
+
+{% block main_content %}
+    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>THỐNG KÊ</b></h4></div>
+    <div class="text-primary" style="text-align:center;"><h4><b>THỜI GIAN VẬN HÀNH</b></h4></div>
+    {% if user.is_authenticated %} {# is_superuser #}
+        <a href="{% url 'operation_timing:add' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-plus"></span> Thêm mới</a>
+        </br></br>
+        <a class="text-danger" href="{% url 'operation_timing:delete' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-minus"></span> Xóa</a>
+        </br></br>
+    {% endif %}
+    <a href="{% url 'operation_timing:query' %}"><span class="glyphicon glyphicon-calendar"></span> Xem toàn bộ</a>
+    <hr/>
+    <form action="{% url 'operation_timing:query' %}" method='get' class="form">
+        {% bootstrap_form query_form %}
+        {% buttons %}
+            <button name="submit" class="btn btn-primary">Xem</button>
+        {% endbuttons %}
+    </form>
+    {% if send_data|default:'' %}
+        <hr class=".bg-primary" style="border:1px solid #007bff;"/>
+        <a href="#" onclick="print_events()"><button class="btn btn-primary" ><span class="glyphicon glyphicon-print"></span> In</button></a>
+        <hr/>
+    {% else %}
+        {% if send_data_total|default:'' %}
+            <hr class=".bg-primary" style="border:1px solid #007bff;"/>
+        {% endif %}
+    {% endif %}
+    <div id="operation_timing">
+        <tt>
+            {% if send_data|default:'' %}
+                <style>
+                    th {
+                        text-align:center !important;
+                        border: 1px solid !important;
+                    }
+                    td {
+                        text-align:center !important;
+                        border-left: 1px solid !important;
+                        border-right: 1px solid !important;
+                        border-top: none !important;
+                    }
+                </style>
+                <div class="table-responsive">
+                    <table class="table table-condensed">
+                        <thead style="display:table-header-group;">
+                            <tr>
+                                <th>Date</br>&nbsp;</th>
+                                <th>P x t</br>(kW) (min)</th>
+                                <th>&#8721; P.t</br>(MWd)</th>
+                                <th>&#8721;&#8721; P.t</br>(MWd)</th>
+                                <th>U<sup>235</sup></br>(g)</th>
+                                <th>T<sub>op</sub></br>(min)</th>
+                                <th>&#8721; T<sub>op</sub></br>(hr)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in send_data %}
+                                {% for row in group.2 %}
+                                    <tr>
+                                        <td>
+                                            {% ifequal forloop.counter 1 %}
+                                                {% ifequal group.0 group.1 %}
+                                                    ** {{ group.0|date:"m/d/y" }}
+                                                {% else %}
+                                                    <span>Fr {{ group.0|date:"m/d/y" }}</span>
+                                                {% endifequal %}
+                                            {% else %}
+                                                {% ifequal forloop.counter 2 %}
+                                                    {% ifequal group.0 group.1 %}
+                                                    {% else %}
+                                                        <span>To {{ group.1|date:"m/d/y" }}</span>
+                                                    {% endifequal %}
+                                                {% endifequal %}
+                                            {% endifequal %}
+                                        </td>
+                                        <td>
+                                            <span class="pre">{{ row.0|stringformat:".1f"|slice:":3" }} x {{ row.1|ljust:"5" }}</span>
+                                        </td>
+                                        <td>
+                                            {% if forloop.last %}
+                                                {{ group.3|stringformat:".5f" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if forloop.last %}
+                                                {{ group.4|stringformat:".5f" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if forloop.last %}
+                                                {{ group.5|stringformat:".4f" }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if forloop.last %}
+                                                <span class="pre">{{ group.6|rjust:"5" }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if forloop.last %}
+                                                <span class="pre">{{ group.7|rjust:"7" }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+            {% if send_data_total|default:'' %}
+                <style>
+                    .pre{
+                        white-space: pre;
+                    }
+                </style>
+                <div style="text-align:center;">
+                    <span><tt>*******************************************</tt></span>
+                    </br>
+                    <span class="pre"><tt>*{{ ""|rjust:"7" }}FROM {{ send_data_total.0|date:"m/d/y" }} TO {{ send_data_total.1|date:"m/d/y" }}{{ ""|rjust:"9" }}*</tt></span>
+                    </br>
+                    <span class="pre"><tt>*{{ ""|rjust:"7" }}-------------------------{{ ""|rjust:"9" }}*</tt></span>
+                    </br>
+                    <span class="pre"><tt>* Operation Time (at P &ge; 2.5 kW), h{{ send_data_total.2|stringformat:".0f"|rjust:"7" }}*</tt></span>
+                    </br>
+                    <span class="pre"><tt>* Release Thermal Energy, MWd{{ send_data_total.3|stringformat:".3f"|rjust:"13" }}*</tt></span>
+                    </br>
+                    <span class="pre"><tt>* Burn-up of U-235, g{{ send_data_total.4|stringformat:".3f"|rjust:"21" }}*</tt></span>
+                    </br>
+                    <span><tt>*******************************************</tt></span>
+                    </br></br>
+                </div>
+            {% endif %}
+        </tt>
+    </div>
+
+    <script>
+        function print_events(){
+            var temp = $('body').html();
+            $('body').html($('#operation_timing').html());
+            window.print()
+            $('body').html(temp);
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,17 @@
+<a href="" onclick="logout()">Thoát</a>
+
+<script>
+    function logout(){
+        $.ajax({
+            url: '{%url "accounts:logout"%}',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            type: 'POST',
+            error: function(){
+                alert("Có lỗi xảy ra trong khi logout");
+            }
+        });
+        window.location.reload();
+    }
+</script>

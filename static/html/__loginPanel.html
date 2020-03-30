@@ -1,0 +1,65 @@
+<a href="" data-toggle="modal" data-target="#loginPanel">Đăng nhập</a>
+
+<div class="movetobody">
+    <div class="modal" id="loginPanel" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                </div>
+                <div class="modal-body" style="text-align:center;">
+                    <form id="LoginForm">
+                        <div id="login_status"></div>
+                        <input class="form-control" type="text" id="login_username" placeholder="Tên đăng nhập" required/>
+                        </br>
+                        <input class="form-control" type="password" id="login_password" placeholder="Mật khẩu" required/>
+                        </br></br>
+                        <button class="btn btn-primary" type="submit">Đăng nhập</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("LoginForm").onsubmit = function(event){
+            // Khong cho load trang khi submit
+            event.preventDefault();
+            // Use AJAX to login
+            var username = $("#login_username").val();
+            var password = $("#login_password").val();
+            $.ajax({
+                url: '{%url "accounts:login"%}',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'username': username,
+                    'password': password
+                },
+                type: 'POST',
+                success: function (data) {
+                    if (data.status === ''){
+                        window.location.reload();
+                    } else {
+                        $('#login_status').html('<p id="login_status" style="margin:10px auto;color:#f00;text-align:left;">* ' + data.status + '</p>');
+                        $("#login_password").val('');
+                        $("#login_username").focus();
+                    }
+                },
+                error: function(){
+                    $('#login_status').html('<p id="login_status" style="margin:10px auto;color:#f00;text-align:left;">* Có lỗi xảy ra nhưng chưa xác định được</p>');
+                }
+            });
+        };
+
+        // Focus to username field
+        $('#loginPanel').on('shown.bs.modal', function(e){
+            $("#login_username").focus();
+        });
+
+        // Delete content of status
+        $('#loginPanel').on('hidden.bs.modal', function(e){
+            $('#login_status').html('');
+            $("#login_password").val('');
+        });
+    </script>
+</div>

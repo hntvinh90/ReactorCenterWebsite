@@ -1,0 +1,110 @@
+{% extends 'static/html/mainframe.html' %}
+
+{% load bootstrap4 %}
+
+{% block main_content %}
+{% with max_power=500 %}
+    <br/>
+    <a href="
+        {% if for_saving_query|default:'' %}
+            {% ifequal for_saving_query '?' %}
+                {% url 'operation_timing:index' %}
+            {% else %}
+                {% url 'operation_timing:query' %}{{ for_saving_query }}
+            {% endifequal %}
+        {% else %}
+            {% url 'operation_timing:index' %}
+        {% endif %}
+    "><button class="btn btn-primary" ><span class="glyphicon glyphicon-chevron-left"></span> Back</button></a>
+    <hr/>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Start</th>
+                    <th>Stop</th>
+                    <th colspan="2">Công suất (kW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if last_records %}
+                    {% for record in last_records reversed %}
+                        <tr>
+                            <td>{{record.from_time|date:"Y-m-d"}}</td>
+                            <td>{{record.from_time|time:"H:i"}}</td>
+                            <td>{{record.to_time|time:"H:i"}}</td>
+                            <td colspan="2">{{record.power}}</td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                <tr id="operation_timing_new"></tr>
+                <form id="operation_timing_form">
+                    <tr>
+                        <td>
+                            <input id="operation_timing_from_date" type="date" class="form-control" required
+                                {% if last_records %} value="{{last_records.0.from_time|date:'Y-m-d'}}" {% endif %}
+                            />
+                        </td>
+                        <td>
+                            <input id="operation_timing_from_time" type="time" class="form-control" required />
+                        </td>
+                        <td>
+                            <input id="operation_timing_to_time" type="time" class="form-control" required />
+                        </td>
+                        <td>
+                            <input id="operation_timing_power" class="form-control" oninput="checkFloat(this.id)" required placeholder="Số % của {{max_power}} kW" />
+                        </td>
+                        <td>
+                            <input type="submit" class="btn btn-primary" value="Thêm" />
+                        </td>
+                    </tr>
+                </form>
+            </tbody>
+        </table>
+        <div id="go_to_view"></div>
+    </div>
+
+    <script>
+        function checkFloat(id){
+            reg = /^[0-9]+(\.[0-9]*)?$/;
+            if (!reg.test($('#'+id).val())){
+                $('#'+id).val('');
+            }
+        }
+
+        $('#operation_timing_form').submit(function(event){
+            event.preventDefault();
+            var date = $('#operation_timing_from_date').val();
+            var from_time =  $('#operation_timing_from_time').val();
+            var to_time = $('#operation_timing_to_time').val();
+            var power = $('#operation_timing_power').val()*{{max_power}}/100;
+            $.ajax({
+                url: '{%url "operation_timing:add"%}',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'from_time': date + ' ' + from_time,
+                    'to_time': date + ' ' + to_time,
+                    'power': power
+                },
+                type: 'POST',
+                success: function(data){
+                    if(data.error){
+                        alert(data.error);
+                    }else{
+                        $('#operation_timing_new').before('<tr class="text-success"><td>' + date + '</td><td>' + from_time + '</td><td>' + to_time + '</td><td colspan="2">' + power + '</td></tr>');
+                        document.getElementById('go_to_view').scrollIntoView();
+                        $('#operation_timing_to_time').val('');
+                        $('#operation_timing_from_time').val('');
+                        $('#operation_timing_power').val('');
+                        $('#operation_timing_from_time').focus();
+                    }
+                },
+                error: function(){
+                    alert("Có lỗi xảy ra nhưng chưa xác định được");
+                }
+            });
+        });
+    </script>
+{% endwith %}
+{% endblock %}

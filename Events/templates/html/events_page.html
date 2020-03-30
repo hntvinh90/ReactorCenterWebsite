@@ -1,0 +1,22 @@
+{% extends 'static/html/mainframe.html' %}
+
+{% load bootstrap4 %}
+
+{% block main_content %}
+    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>NHẬT KÝ VẬN HÀNH</b></h4></div>
+    {% if user.is_authenticated %}
+        <a href="{% url 'events:add_event' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-plus"></span> Thêm mới</a>
+        </br></br>
+    {% endif %}
+    <a href="{% url 'events:query_event' %}"><span class="glyphicon glyphicon-calendar"></span> Xem toàn bộ</a>
+    <hr/>
+    <form action="{% url 'events:query_event' %}" method='get' class="form">
+        {% bootstrap_form query_form %}
+        {% buttons %}
+            <button name="submit" class="btn btn-primary">Xem</button>
+        {% endbuttons %}
+    </form>
+    {% if events|default:'' %}
+        {% include './__listingEvents.html' %}
+    {% endif %}
+{% endblock %}

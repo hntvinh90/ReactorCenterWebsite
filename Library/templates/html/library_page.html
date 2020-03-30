@@ -1,0 +1,165 @@
+{% extends 'static/html/mainframe.html' %}
+
+{% load bootstrap4 %}
+
+{% block main_content %}
+    <!-- TITLE -->
+    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>THƯ VIỆN</b></h4></div>
+
+    <!-- SEARCH BAR -->
+    <div style="margin:20px 0px;">
+        <form action="{% url 'library:get_material' %}" method='get' id="form-search-library">
+            <div class="input-group">
+                <span class="input-group-addon">Tìm kiếm</span>
+                <input type="text" class="form-control" name="content" required value="{{content|default:''}}" oninput="trim_text()" maxlength="32"/>
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-danger" onclick="clear_input()" id="clear" style="display:none;"><span class="glyphicon glyphicon-remove"></span></button>
+                    <button type="submit" class="btn btn-default">
+                        <span class="glyphicon glyphicon-search"></span>
+                    </button>
+                </span>
+            </div>
+        </form>
+    </div>
+
+    {% if content|default:'' %}
+        <div style="margin-bottom:10px;">
+            <a href="{% url 'library:index' %}"><span class="glyphicon glyphicon-home"></span> Quay lại thư viện</a>
+        </div>
+    {% endif %}
+
+    <!-- FILES and FOLDERS -->
+    <div class="clearfix">
+        <div class="table-responsive" id="1_part" style="float:left; width:100%;">
+            <table class="table table-hover table-bordered">
+                {% if empty|default:"" %}
+                    <tr>
+                        <td>Không tìm thấy gì từ thư viện</td>
+                    </tr>
+                {% else %}
+                    {% for dir in dirs %}
+                        <tr>
+                            <td class="1" id="1_{{forloop.counter}}" data-folder-address="{{ dir }}" onclick="get_subFolder(this.id)">
+                                <a href="#">
+                                    <div style="width:100%;">
+                                        <span class="glyphicon glyphicon-folder-close"></span> {{ dir }}
+                                    </div>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    {% for file in files %}
+                        <tr>
+                            <td class="1">
+                                <div class="clearfix">
+                                    <div style="float:left;"><span class="glyphicon glyphicon-file"></span> {{ file }}</div>
+                                    <div style="float:right;"><a target="_blank" href="/media/library/{{ file }}" download><span class="glyphicon glyphicon-save"></span></a></div>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            </table>
+        </div>
+        <div id="the_last" style="display:none; float:right; width:0%;"></div>
+    </div>
+
+    <script>
+        function get_subFolder(id){
+            // Lam toi (dark) nhung thu muc con lai
+            var class_name = $('#'+id).attr('class');
+            $("."+class_name).css('background-color','#eee');
+            $("#"+id).css('background-color','#fff');
+
+            // Xoa het cac phan du (neu co)
+            var number_of_part = class_name;
+            number_of_part++;
+            while ($('#'+number_of_part+'_part').length){
+                $("#"+number_of_part+"_part").remove();
+                number_of_part++;
+            }
+
+            // Get path
+            var path_to_send = $("#"+id).data('folder-address');
+
+            // AJAX POST
+            $.ajax({
+                url: '{%url "library:get_material"%}',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'path': path_to_send
+                },
+                type: 'POST',
+                success: function(data){
+                    if(data.path){
+                        // number_of_part hien tai la so phan truoc khi load
+                        // do do phai cong them 1
+                        class_name ++;
+                        // Thay doi do rong cua moi phan
+                        var width_each_part = 100/class_name;
+                        for(var i=1; i<class_name; i++){
+                            $("#"+i+"_part").css("width", width_each_part+"%");
+                        }
+
+                        received_path = JSON.parse(data.path);
+                        var html =  '<div class="table-responsive" id="'+class_name+'_part" style="float:left; width:'+width_each_part+'%;">' +
+                                        '<table class="table table-hover table-bordered">';
+                        if (received_path.empty||""){
+                            html += '<tr>' +
+                                        '<td style="background-color:#eee;color:#aaa;">' +
+                                            '<span>Thư mục trống</span>' +
+                                        '</td>' +
+                                    '</tr>';
+                        }else{
+                            var index_for_dir = 1;
+                            received_path.dirs.forEach(function(dir){
+                                html += '<tr>' +
+                                            '<td class='+class_name+' id='+class_name+'_'+index_for_dir+' data-folder-address="'+path_to_send+'/'+dir+'" onclick="get_subFolder(this.id)">' +
+                                                '<a href="#">' +
+                                                    '<div style="width:100%;">' +
+                                                        '<span class="glyphicon glyphicon-folder-close"></span> '+dir +
+                                                    '</div>' +
+                                                '</a>' +
+                                            '</td>' +
+                                        '</tr>';
+                                 index_for_dir ++;
+                            });
+                            received_path.files.forEach(function(file){
+                                html += '<tr>' +
+                                            '<td class='+class_name+'>' +
+                                                '<div class="clearfix">' +
+                                                    '<div style="float:left;"><span class="glyphicon glyphicon-file"></span> '+file+'</div>' +
+                                                    '<div style="float:right;"><a target="_blank" href="/media/library/'+path_to_send+'/'+file+'"><span class="glyphicon glyphicon-save"></span></a></div>' +
+                                                '</div>' +
+                                            '</td>' +
+                                        '</tr>';
+                            });
+                        }
+                        $("#the_last").before(html +
+                            '    </table>' +
+                            '</div>'
+                        );
+                    }else{
+                        alert("Không thể nhận dữ liệu từ server");
+                    }
+                },
+                error: function(){
+                    alert("Có lỗi xảy ra nhưng chưa xác định được");
+                }
+            });
+        }
+        function trim_text(){
+            $('#form-search-library input').val($('#form-search-library input').val().trimLeft().replace(/ +/g," "));
+            if($('#form-search-library input').val()!==''){
+                $('#clear').css('display', 'inline');
+            } else {
+                $('#clear').css('display', 'none');
+            }
+        }
+        function clear_input(){
+            $('#form-search-library input').val('');
+            $('#clear').css('display', 'none');
+            $('#form-search-library input').focus();
+        }
+    </script>
+{% endblock %}

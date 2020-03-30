@@ -1,0 +1,73 @@
+<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+        <!-- HEADER -->
+        <div class="navbar-header">
+            <!-- BRAND -->
+            <a class="navbar-brand" href="{% url 'homepage:index' %}" style="font-size:2em;">
+                Reactor Center
+            </a>
+            <!-- /BRAND -->
+
+            <!-- Thu nho cac muc tren thanh tieu de thanh mot nut bam khi hien thi tren man hinh nho -->
+            <button type="button" class="navbar-toggle navbar-right " data-toggle="collapse" data-target="#bs-example-navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <!-- /HEADER -->
+
+        <!-- BODY -->
+        <div class="navbar-right navbar-collapse collapse" id="bs-example-navbar-collapse">
+            <ul class="nav navbar-nav">
+                <!-- MENU -->
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown">
+                        Danh mục <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu" style="visibility: visible;">
+                        <li><a href="{% url 'events:index' %}">Nhật ký vận hành</a></li>
+                        <li class="divider"></li>
+                        <li><a href="{% url 'operation_timing:index' %}">Thời gian vận hành</a></li>
+                        <li class="divider"></li>
+                        <li><a href="{% url 'library:index' %}">Thư viện</a></li>
+                    </ul>
+                </li>
+                <!-- /MENU -->
+
+                <!-- USER -->
+                {# Kiem tra nguoi dung co dang nhap hay khong #}
+                {% if user.is_authenticated %}
+                    <li class="dropdown">
+                        <a href="" class="dropdown-toggle" data-toggle="dropdown">
+                            {{ user.username }} <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <!-- CHANGE PASSWORD -->
+                                {% include './__changePassPanel.html' %}
+                                <!-- /CHANGE PASSWORD -->
+                            </li>
+                            <li class="divider"></li>
+                            <li>
+                                <!-- LOGOUT -->
+                                {% include './__logout.html' %}
+                                <!-- /LOGOUT -->
+                            </li>
+                        </ul>
+                    </li>
+                {%else%}
+                    <li>
+                        <!-- LOGIN PANEL -->
+                        {% include './__loginPanel.html' %}
+                        <!-- /LOGIN PANEL -->
+                    </li>
+                {%endif%}
+                <!-- /USER -->
+            </ul>
+            <p class="navbar-text"><a href="/admin" target="_blank">Admin Site</a></p>
+        </div>
+        <!-- /BODY -->
+    </div>
+</div>
