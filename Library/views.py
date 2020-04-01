@@ -30,6 +30,7 @@ patterns = {
 
 
 def convert_vi_to_en(text):
+    # Chuyen cac tu co dau (vi) sang khong dau (en)
     output = text
     for regex, replace in patterns.items():
         output = re.sub(regex, replace, output)
