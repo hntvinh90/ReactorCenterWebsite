@@ -15,7 +15,6 @@ def send_path(path=[]):
             dirs.sort()
             files.sort()
             return {'dirs': dirs, 'files': files}
-    return {'dirs': [os.path.abspath('.')], 'files': []}
     return {'empty': 'True'}
 
 
