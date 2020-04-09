@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 
 from .forms import QueryOperationTimingForm, AddOperationTimingForm, DeleteOperationTimingForm
 from .models import OperationTime
@@ -91,13 +91,14 @@ def query(request):
     return render(request, 'html/operation_timing_page.html', context)
 
 
+@login_required(login_url='/operation_timing')
 def add(request):
     if request.method == 'POST':
         error = ''
         form = AddOperationTimingForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            if data['from_time'] > data['to_time']:
+            if data['power'] and data['from_time'] > data['to_time']:
                 error = 'Thời gian Start không được lớn hơn thời gian Stop.'
             elif OperationTime.objects.filter(to_time__gt=data['from_time']):
                 error = 'Khoảng thời gian này đã có trong cơ sở dữ liệu.'
@@ -121,7 +122,7 @@ def __calculate_operation_time(form):
     new_record = form.save(commit=False)
 
     # Chi tinh khi cong suat lon hon hoac bang 0.5%/2.5kW
-    if new_record.power < 2.5:
+    if new_record.power < 2.5:  # tuong duong 0.5% cua 500kW
         new_record.power = 0
 
     # Record ngay phia truoc de lay thoi gian, MWd va U235 tong
@@ -171,6 +172,7 @@ def __calculate_operation_time(form):
     form.save()
 
 
+@login_required(login_url='/operation_timing')
 def delete(request):
     if request.method == 'POST':
         error = ''

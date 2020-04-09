@@ -8,7 +8,7 @@
 
     <!-- SEARCH BAR -->
     <div style="margin:20px 0px;">
-        <form action="{% url 'library:get_material' %}" method='get' id="form-search-library">
+        <form action="{% url 'library:search' %}" method='get' id="form-search-library">
             <div class="input-group">
                 <span class="input-group-addon">Tìm kiếm</span>
                 <input type="text" class="form-control" name="content" required value="{{content|default:''}}" oninput="trim_text()" maxlength="32"/>
@@ -84,7 +84,7 @@
 
             // AJAX POST
             $.ajax({
-                url: '{%url "library:get_material"%}',
+                url: '{%url "library:get_files_and_folders"%}',
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                     'path': path_to_send
