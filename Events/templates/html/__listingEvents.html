@@ -1,32 +1,17 @@
+{# Liet ke cac su kien sau khi query #}
+
 <hr class=".bg-primary" style="border:1px solid #007bff;"/>
 <a href="" onclick="print_events()"><button class="btn btn-primary"><span class="glyphicon glyphicon-print"></span> In</button></a>
 
 <hr/>
-<div id="events_list">
+{% load static %}
+<link rel="stylesheet" href="{% static 'image_viewer/iv-viewer.min.css' %}"/>
+<div id="image-gallery-3" class="cf" style="text-align:center;">
+    {% load custom_filters %}
     {% for event in events %}
-        <div>
-            <div class="clearfix">
-                <div style="float:left;">
-                    <b>{{ event.date|date:"Y-m-d" }}</b>
-                    </br><small><i>Created by {{ event.owner.username }}</i></small>
-                    </br><small><i>{{ event.date_added }}</i></small>
-                </div>
-                <div style="float:right;">
-                    {% ifequal user event.owner %}
-                        <a class="label label-success" href="{% url 'events:edit_event' event.id %}{{ for_saving_query }}"><span class="glyphicon glyphicon-edit"></span> Sửa</a>
-                        <button class="btn btn-danger label" onclick="del_event({{ event.id }})" href="#"><span class="glyphicon glyphicon-remove"></span> Xóa</button>
-                    {% endifequal %}
-                </div>
-            </div>
-            <br/>
-            <tt>
-                <div style="white-space:pre;">{{ event.description }}</div>
-            </tt>
-            {% if event.incident %}
-                <a class="label label-primary" href="{% url 'events:query_event' %}?incident=on"># Có sự cố</a>
-            {% endif %}
-        </div>
-        {%if forloop.last%}{%else%}<hr style="page-break-before: always"/>{%endif%}
+        {% for link in event.description|linebreaksbr|split:'<br>' %}
+            <img src={{link}} data-high-res-src={{link}} alt="Image not found" class="pannable-image">
+        {% endfor %}
     {% endfor %}
 </div>
 
@@ -51,29 +36,25 @@
     </ul>
 </div>
 
+{# for print #}
+<div id="events_list" style="display:none;">
+    {% for event in events %}
+        {% for link in event.description|linebreaksbr|split:'<br>' %}
+            <img src={{link}} class="img-fluid">
+            {%if forloop.last%}{%else%}<hr style="page-break-before: always"/>{%endif%}
+        {% endfor %}
+        {%if forloop.last%}{%else%}<hr style="page-break-before: always"/>{%endif%}
+    {% endfor %}
+</div>
+
+<script src="{% static 'image_viewer/iv-viewer.min.js' %}"></script>
 <script>
+    Array.from(document.querySelectorAll(".pannable-image")).forEach(elem => {new ImageViewer(elem);});
+
     function print_events(){
         var temp = $('body').html();
         $('body').html($('#events_list').html());
         window.print()
         $('body').html(temp);
-    }
-    function del_event(event_id){
-        if(confirm('Chắc chắn xóa?')){
-            $.ajax({
-                url: '{% url "events:del_event" %}',
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'event_id': event_id
-                },
-                type: 'POST',
-                success: function (data) {
-                    window.location.reload();
-                },
-                error: function(){
-                    alert('Có lỗi xảy ra nhưng chưa xác định được');
-                }
-            });
-        }
     }
 </script>

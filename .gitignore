@@ -1,8 +1,12 @@
 **/__pycache__/
-db.sqlite3
-**/migrations/*
-!**/migrations/__init__.py
+**/database/
 venv/
 static_for_deploying/
+
+**/migrations/*
 media/*
+
+db.sqlite3
+
+!**/__init__.py
 !**/*.md

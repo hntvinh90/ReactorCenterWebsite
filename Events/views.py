@@ -1,100 +1,98 @@
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.contrib.auth.models import User
+from django.db.models import Q
 
-from .models import Event
-from .forms import QueryEventForm, NewEventForm, EditEventForm
-from .template import events_template
+from .models import USING_DATABASE, Event
+from .forms import QueryForm
 
 
 # Create your views here.
 def index(request):
-    query_form = QueryEventForm()
-    context = {'query_form': query_form,}
-    return render(request, 'html/events_page.html', context)
+    return query(request)
 
 
-def query_event(request):
-    for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-    user = User.objects.filter(username=request.user.username)
-    query_form = QueryEventForm(request.GET)
-    events = Event.objects.all().order_by('-date')
-    if request.GET.get('incident', ''):
-        events = events.filter(incident=True)
-    if user and request.GET.get('only_me', ''):
-        events = events.filter(owner=request.user)
-    if query_form.is_valid():
-        data = query_form.cleaned_data
-        if data['fromDate'] > data['toDate']:
-            data['toDate'] = data['fromDate']
-        events = events.filter(date__gte=data['fromDate'], date__lte=data['toDate'])
+def query(request):
+    # all data in database
+    records = None
+
+    # Neu co yeu cau query data
+    if request.GET:
+        # Get request form
+        query_form = QueryForm(request.GET)
+
+        # Kiem tra query form co hop le khong
+        if query_form.is_valid():
+            data = query_form.cleaned_data
+
+            # Xu ly khi nguoi dung nhap fromDate > toDate
+            if data['fromDate'] > data['toDate']:
+                data['toDate'] = data['fromDate']
+
+            records = Event.objects.using(USING_DATABASE).filter(
+                Q(from_date__gte=data['fromDate'], from_date__lte=data['toDate'])
+                | Q(to_date__gte=data['fromDate'], to_date__lte=data['toDate'])
+            ).order_by('from_date')
+
+            # Neu request yeu cau thong tin ve cac su co
+            if request.GET.get('incident', ''):
+                records = records.filter(incident=True)
+
+    # Neu chi GET page
     else:
-        query_form = QueryEventForm({'fromDate': events.last().date, 'toDate': events.first().date})
-    number_per_page = 10  # number of date per page
-    page_number = int(request.GET.get('page_number', 0))
-    max_page = (len(events) - 1) // number_per_page
-    if page_number > max_page:
-        events = ''
+        query_form = QueryForm()
+
+    # Tranh tai du lieu qua nhieu => chia du lieu query thanh nhieu page
+    number_per_page = 10  # number of date to show in per page
+    if records:
+        max_page = (len(records) - 1) // number_per_page
+    else:
+        max_page = 0
+    page_number = request.GET.get('page_number')
+    # FIX: mot so ngoai le
+    if page_number:
+        if page_number.isdigit():
+            page_number = int(page_number)
+            if page_number > max_page:
+                page_number = max_page
+            if page_number < 0:
+                page_number = 0
+        else:
+            page_number = 0
+    else:
+        page_number = 0
+
     context = {
-        'events': events[number_per_page * page_number:number_per_page * (page_number + 1)] if (events and max_page) else events,
+        'events': records[number_per_page * page_number:number_per_page * (page_number + 1)] if max_page else records,
         'query_form': query_form,
-        'for_saving_query': for_saving_query,
         'max_page': max_page,
-        'page_number': page_number
+        'page_number': page_number,
+
+        # ON/OFF append_data_from_file
+        'data_from_file': True,
     }
     return render(request, 'html/events_page.html', context)
 
 
 @login_required(login_url='/events')
-def add_event(request):
-    for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-    error = ''
-    if request.method != 'POST':
-        # No data submitted; create a blank form.
-        form = NewEventForm()
-    else:
-        # POST data submitted; process data.
-        form = NewEventForm(request.POST)
-        if form.is_valid():
-            new_event = form.save(commit=False)
-            check_event = Event.objects.filter(date=new_event.date)
-            if check_event:
-                error = 'Ngày %s đã có trong cơ sở dữ liệu. Được nhập bởi %s.' % (
-                    new_event.date, check_event[0].owner.username)
-            else:
-                new_event.owner = request.user
-                form.save()
-                return redirect(
-                    reverse('events:query_event') + '?fromDate={0}&toDate={0}&submit='.format(new_event.date))
-        else:
-            error = 'Dữ liệu gửi đi không đúng định dạng'
-    context = {'form': form, 'error': error, 'for_saving_query': for_saving_query, 'events_template': events_template}
-    return render(request, 'html/add_event.html', context)
-
-
-@login_required(login_url='/events')
-def del_event(request):
-    event_id = request.POST.get('event_id', '')
-    if event_id:
-        event = Event.objects.get(id=event_id)
-        if event.owner == request.user:
-            event.delete()
-    return JsonResponse({})
-
-
-@login_required(login_url='/events')
-def edit_event(request, event_id):
-    for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-    event = Event.objects.get(id=event_id)
-    if event.owner == request.user:
-        if request.method != 'POST':
-            form = EditEventForm(instance=event)
-        else:
-            form = EditEventForm(instance=event, data=request.POST)
-            if form.is_valid():
-                form.save()
-                return redirect(reverse('events:query_event') + '?fromDate={0}&toDate={0}&submit='.format(event.date))
-    context = {'form': form, 'event_id': event_id, 'for_saving_query': for_saving_query}
-    return render(request, 'html/edit_event.html', context)
+def append_data_from_file(request):
+    import os, datetime
+    path = os.path.join('Events', 'database', 'add')
+    date_format = '%Y%m%d'
+    for root, dirs, files in os.walk(path):
+        files.sort()
+        for file in files:
+            data = file.split('_')
+            from_date = datetime.datetime.strptime(data[0], date_format).date()
+            to_date = datetime.datetime.strptime(data[1], date_format).date()
+            record, created = Event.objects.using(USING_DATABASE).get_or_create(
+                from_date=from_date,
+                to_date=to_date,
+                defaults={
+                    'description': file,
+                    'incident': True if data[2] == '1' else False
+                }
+            )
+            if not created:
+                record.description = '\n'.join([record.description, file])
+                record.save()
+    return index(request)

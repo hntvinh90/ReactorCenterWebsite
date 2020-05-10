@@ -1,5 +1,7 @@
 """Defines URL patterns for learning_logs."""
 from django.urls import path
+from django.conf.urls.static import static
+from django.conf import settings
 
 from . import views
 
@@ -8,8 +10,6 @@ app_name = 'events'
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('query_event/', views.query_event, name='query_event'),
-    path('add_event/', views.add_event, name='add_event'),
-    path('del_event/', views.del_event, name='del_event'),
-    path('edit_event/<int:event_id>/', views.edit_event, name='edit_event'),
-]
+    path('query/', views.query, name='query'),
+    path('append_data_from_file', views.append_data_from_file, name='append_data_from_file'),
+] + static('/query/', document_root=settings.EVENTS_ROOT)

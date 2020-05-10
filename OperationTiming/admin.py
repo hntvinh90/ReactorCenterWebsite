@@ -1,14 +1,28 @@
 from django.contrib import admin
 
-from .models import OperationTime
+from libs.alternateDB import AlternateDB
+from .models import USING_DATABASE, OperationTime, SaveData
+from .forms import AddForm
 
 
 # Register your models here.
-class OperationTimeAdmin(admin.ModelAdmin):
-    list_display = ['power', 'time']
+@admin.register(OperationTime)
+class OperationTimeAdmin(AlternateDB):
+    using = USING_DATABASE
+    list_display = ['pk', 'from_power', 'power', 'show_time']
+    ''', 'MWd_total', 'time_for_Mwd_up', 'time_for_Mwd_steady',
+                    'operation_time_up', 'operation_time_steady', 'MWd_up', 'MWd_steady']  # '''
+    form = AddForm
 
-    def time(self, obj):
-        return '%s - %s, %s' %(obj.from_time.strftime("%H:%M"), obj.to_time.strftime("%H:%M"), obj.from_time.strftime("%m/%d/%Y"))
+    def show_time(self, obj):
+        return '%s - %s, %s' % (
+            obj.from_time.strftime("%H:%M"),
+            obj.to_time.strftime("%H:%M"),
+            obj.date.strftime("%Y/%m/%d")
+        )
 
 
-admin.site.register(OperationTime, OperationTimeAdmin)
+# @admin.register(SaveData)
+class SaveDataAdmin(AlternateDB):
+    using = USING_DATABASE
+    readonly_fields = ['last_record']

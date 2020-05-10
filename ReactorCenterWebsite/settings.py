@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'q43o!y&bmy@7*f@aa0^)qfj&g!#3v13^18%^4(7!o(ud%#@-h='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# '''
+'''
 DEBUG = True
 '''
 DEBUG = False
@@ -126,6 +126,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 #  // MY OPTIONS //
 # ================
 
+# Max power of reactor (kW)
+MAX_POWER = 500
+# Min power (%) to calculate, if power value is less than it then power is considered 0% (0 kW).
+MIN_POWER = 0.5
+
 # Add/Remove applications to/from website
 APPS_NAME = [
     'bootstrap4',
@@ -134,6 +139,7 @@ APPS_NAME = [
     'Events',
     'OperationTiming',
     'Library',
+    'ExcessReactivity',
 ]
 
 # To load templates
@@ -151,3 +157,23 @@ SESSION_COOKIE_AGE = 3600
 
 # To download file from library
 LIBRARY_ROOT = os.path.join(MEDIA_ROOT, 'library')
+
+# To load image in events query
+EVENTS_ROOT = os.path.join(BASE_DIR, 'Events', 'database')
+# /// Them database luu tru ngay thang cho image of Events
+DATABASES['events'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': os.path.join(EVENTS_ROOT, 'date_of_images'),
+}  # ///
+
+# /// Database for OperationTiming app
+DATABASES['operation_timing'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': os.path.join(BASE_DIR, 'OperationTiming', 'database', 'operation_time'),
+}  # ///
+
+# /// Database for ExcessReactivity app
+DATABASES['excess_reactivity'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': os.path.join(BASE_DIR, 'ExcessReactivity', 'database', 'excess_reactivity'),
+}  # ///

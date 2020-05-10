@@ -1,13 +1,16 @@
 from django.contrib import admin
-from .models import Event
+from libs.alternateDB import AlternateDB
+from .models import USING_DATABASE, Event
 
 
 # Register your models here.
-class EventAdmin(admin.ModelAdmin):
-    list_display = ['time', 'owner']
+@admin.register(Event)
+class EventAdmin(AlternateDB):
+    using = USING_DATABASE
+    list_display = ['from_date_in_str', 'to_date_in_str']
 
-    def time(self, obj):
-        return obj.date.strftime("%m/%d/%Y")
+    def from_date_in_str(self, obj):
+        return obj.from_date.strftime("%Y/%m/%d")
 
-
-admin.site.register(Event, EventAdmin)
+    def to_date_in_str(self, obj):
+        return obj.to_date.strftime("%Y/%m/%d")

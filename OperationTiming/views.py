@@ -1,210 +1,146 @@
 from django.shortcuts import render
-from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 
-from .forms import QueryOperationTimingForm, AddOperationTimingForm, DeleteOperationTimingForm
-from .models import OperationTime
-
-from datetime import timedelta
-from math import log
+from .forms import QueryForm
+from .models import USING_DATABASE, OperationTime, SaveData
 
 
 # Create your views here.
 def index(request):
-    query_form = QueryOperationTimingForm()
-    context = {'query_form': query_form}
-    return render(request, 'html/operation_timing_page.html', context)
+    return query(request)
 
 
 def query(request):
-    for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-    query_form = QueryOperationTimingForm(request.GET)
-    records = OperationTime.objects.all()
-    if query_form.is_valid():
-        data = query_form.cleaned_data
-        if data['fromDate'] >= data['toDate']:
-            data['toDate'] = data['fromDate'] + timedelta(1)
-        else:
-            data['toDate'] += timedelta(1)
-        records = records.filter(from_time__gte=data['fromDate'], to_time__lte=data['toDate'])
-    else:
-        query_form = QueryOperationTimingForm({'fromDate': records.first().from_time.date(), 'toDate': records.last().to_time.date()})
-    # Phan tich ket qua nhan duoc de ghi ra bang
-    send_data = []
-    send_data_total = []
-    if records:
-        temp = []
-        hour = 0
-        before = 0
-        convert_MWd_to_U235_factor = 1.23
-        for record in records:
-            if record.power:
-                # Truong hop bi dap lo xong len lai thi ghi tiep vao
-                if before and temp and before != record.from_time.date():
-                    temp[1] = before
-                    temp[3] = round(temp[3], 5)
-                    temp[4] = round(temp[4], 5)
-                    temp[5] = round(temp[4]*convert_MWd_to_U235_factor, 4)
-                    temp[7] = round(hour / 60, 1)
-                    send_data.append(temp)
-                    temp = []
-                    before = 0
-                if temp:
-                    temp[2].append([record.power, round(record.time_for_Mwd)])
-                    temp[3] += record.MWd
-                    temp[4] = record.MWd_total
-                    temp[6] += record.operation_time
-                else:
-                    temp = [record.from_time.date(),  # from_time
-                            record.to_time.date(),    # to_time
-                            [[record.power, round(record.time_for_Mwd)]],  # for print power x time (minute)
-                            record.MWd, record.MWd_total,
-                            0,  # U235 in total from MWd_total
-                            record.operation_time,  # operation time in minute each period
-                            0   # operation time in hour in total
-                            ]
-                hour += record.operation_time
+    # all data in database
+    records = None
+
+    # Neu co yeu cau query data
+    if request.GET:
+        # Get request form
+        query_form = QueryForm(request.GET)
+
+        # Kiem tra query form co hop le khong
+        if query_form.is_valid():
+            data = query_form.cleaned_data
+
+            # Xu ly khi nguoi dung nhap fromDate > toDate
+            if data['fromDate'] > data['toDate']:
+                query_form.add_error('toDate', 'Sai ngày')
             else:
-                if temp:
-                    before = record.to_time.date()
-        if temp not in send_data:
-            temp[1] = record.to_time.date()
-            temp[3] = round(temp[3], 5)
-            temp[4] = round(temp[4], 5)
-            temp[5] = round(temp[4]*convert_MWd_to_U235_factor, 4)
-            temp[7] = round(hour / 60, 1)
-            send_data.append(temp)
+                # Get data
+                records = OperationTime.objects.using(USING_DATABASE).filter(
+                    date__gte=data['fromDate'],
+                    date__lte=data['toDate']
+                )
+
+    # Neu chi GET page
+    else:
+        query_form = QueryForm()
+
+    # Xu ly data de hien thi len Page
+    send_data = []
+    if records:
+        temp = []  # Luu tam thoi gia tri cho tung dot chay lo
+        hour = 0  # Tong thoi gian van hanh
+        before = 0  # Kiem tra xem thoi gian lan nay co trung voi lan truoc khong => Fix: bi dap lo xong len lai
+        convert_MWd_to_U235_factor = 1.23
+        start_query = False  # Fix: Lay du lieu tu dau moi dot chay lo
+        for record in records:
+            # Bat dau khi from_power == 0
+            if not start_query and not record.from_power:
+                start_query = True
+            if start_query:
+                if record.power:
+
+                    # Ngay khac lan truoc => dot chay lo moi => luu du lieu de hien thi
+                    if before and temp and before != record.date:
+                        temp[1] = before
+                        temp[3] = round(temp[3], 5)
+                        temp[4] = round(temp[4], 5)
+                        temp[5] = round(temp[4] * convert_MWd_to_U235_factor, 4)
+                        hour += temp[6]
+                        temp[7] = round(hour / 60, 1)
+                        send_data.append(temp)
+                        temp = []
+                        before = 0
+
+                    # Luu tiep gia tri vao temp
+                    if temp:
+                        temp[2].append([record.power, round(record.time_for_Mwd_up + record.time_for_Mwd_steady)])
+                        temp[3] += record.MWd_up + record.MWd_steady
+                        temp[4] = record.MWd_total
+                        temp[6] += record.operation_time_up + record.operation_time_steady
+
+                    # Neu !temp thi khoi tao cac gia tri theo cau truc sau
+                    else:
+                        temp = [
+                            # 0. fromDate
+                            record.date,
+                            # 1. toDate
+                            record.date,
+                            # 2. for print power x time (minute)
+                            [[record.power, round(record.time_for_Mwd_up + record.time_for_Mwd_steady)]],
+                            # 3. MWd
+                            record.MWd_up + record.MWd_steady,
+                            # 4. MWd_total
+                            record.MWd_total,
+                            # 5. U235 in total from MWd_total
+                            0,
+                            # 6. operation time in minute each period
+                            record.operation_time_up + record.operation_time_steady,
+                            # 7. operation time in hour in total
+                            0
+                        ]
+                else:
+                    if temp:
+                        # Luu gia tri ngay dung lo de kiem tra xem co len cong suat lai khong?
+                        before = record.date
+
+        # Fix: Chu ki cuoi cung cua vong lap for khong duoc ghi
+        if temp:
+            # Fix: Chi lay du lieu khi dot chay lo da ket thuc
+            if not record.power:
+                temp[1] = record.date
+                temp[3] = round(temp[3], 5)
+                temp[4] = round(temp[4], 5)
+                temp[5] = round(temp[4] * convert_MWd_to_U235_factor, 4)
+                hour += temp[6]
+                temp[7] = round(hour / 60, 1)
+                send_data.append(temp)
+
+    # Bang tong ket
+    send_data_total = []
     if send_data:
         if query_form.is_valid():
             data = query_form.cleaned_data
             send_data_total = [
+                # 0. fromDate
                 data['fromDate'],
-                data['toDate'] - timedelta(1),
+                # 1. toDate
+                data['toDate'],
+                # 2. Total operation time
                 send_data[-1][7],
+                # 3. MWd total of query period
                 send_data[-1][4] - send_data[0][4],
-                (send_data[-1][4] - send_data[0][4])*convert_MWd_to_U235_factor
+                # 4. U235 total of query period
+                (send_data[-1][4] - send_data[0][4]) * convert_MWd_to_U235_factor
             ]
+
     context = {
-        'query_form': query_form, 'for_saving_query': for_saving_query,
-        'send_data': send_data, 'send_data_total': send_data_total
+        'query_form': query_form,
+        'send_data': [] if request.GET.get('only_total') else send_data,
+        'send_data_total': send_data_total,
+
+        # Thoi gian co trong database
+        'first_day': SaveData.get_first_date(),
+        'last_day': SaveData.get_last_date(),
+
+        # ON/OFF append_data_from_file
+        'data_from_file': False,
     }
     return render(request, 'html/operation_timing_page.html', context)
 
 
 @login_required(login_url='/operation_timing')
-def add(request):
-    if request.method == 'POST':
-        error = ''
-        form = AddOperationTimingForm(request.POST)
-        if form.is_valid():
-            data = form.cleaned_data
-            if data['power'] and data['from_time'] > data['to_time']:
-                error = 'Thời gian Start không được lớn hơn thời gian Stop.'
-            elif OperationTime.objects.filter(to_time__gt=data['from_time']):
-                error = 'Khoảng thời gian này đã có trong cơ sở dữ liệu.'
-            else:
-                try:
-                    __calculate_operation_time(form)
-                except:
-                    error = 'Lỗi khi ghi dữ liệu'
-        else:
-            error = 'Dữ liệu gửi đi không đúng định dạng.'
-        return JsonResponse({'error': error})
-    else:
-        for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-        last_records = OperationTime.objects.all().order_by("-from_time")[:5]
-        context = {'for_saving_query': for_saving_query,
-                   'last_records': last_records}
-        return render(request, 'html/add_operation_timing_page.html', context)
-
-
-def __calculate_operation_time(form):
-    new_record = form.save(commit=False)
-
-    # Chi tinh khi cong suat lon hon hoac bang 0.5%/2.5kW
-    if new_record.power < 2.5:  # tuong duong 0.5% cua 500kW
-        new_record.power = 0
-
-    # Record ngay phia truoc de lay thoi gian, MWd va U235 tong
-    # Lay them thong tin cong suat truoc do
-    before_record = OperationTime.objects.all().last()
-    if before_record:
-        if before_record.power:
-            # Thoi gian duy tri cong suat cua record truoc do
-            t = (new_record.from_time - before_record.to_time).total_seconds() / 60
-            before_record.time_for_Mwd += t
-            before_record.MWd = before_record.power * before_record.time_for_Mwd / 1440000
-            before_record.MWd_total += before_record.MWd
-            before_record.operation_time += t
-            before_record.save()
-
-            if new_record.power:
-                t = (new_record.to_time - new_record.from_time).total_seconds() / 60
-                new_record.time_for_Mwd = t * log(2) / abs(log(new_record.power / before_record.power)) / log(2) * abs(
-                    1 - before_record.power / new_record.power)
-                # Neu cong suat hien tai khac 0 thi cong them thoi gian len cong suat cho viec tinh thoi gian van hanh
-                new_record.operation_time = t
-            else:
-                new_record.time_for_Mwd = 0
-                new_record.operation_time = 0
-        else:
-            # Neu cong suat truoc bang 0
-            if new_record.power:
-                new_record.time_for_Mwd = 1 / log(2)
-            else:
-                new_record.time_for_Mwd = 0
-            # Thoi gian van hanh se duoc tinh tu luc cong suat dat 0.5%
-            new_record.operation_time = 0
-
-        new_record.MWd_total = before_record.MWd_total
-    else:
-        # Neu la record dau tien
-        if new_record.power:
-            new_record.time_for_Mwd = 1 / log(2)
-        else:
-            new_record.time_for_Mwd = 0
-        new_record.MWd_total = 0
-        new_record.operation_time = 0
-
-    # Cho bang 0 truoc, sau nay nhap record tiep roi tinh
-    new_record.MWd = 0
-
-    form.save()
-
-
-@login_required(login_url='/operation_timing')
-def delete(request):
-    if request.method == 'POST':
-        error = ''
-        form = DeleteOperationTimingForm(request.POST)
-        if form.is_valid():
-            date = form.cleaned_data['date']
-            OperationTime.objects.filter(from_time__gte=date).delete()
-        return JsonResponse({'error': error})
-    else:
-        for_saving_query = '?%s' % ('&'.join(['='.join([key, request.GET[key]]) for key in request.GET]))
-        context = {'for_saving_query': for_saving_query}
-        return render(request, 'html/delete_operation_timing_page.html', context)
-
-
-def __recalculate():
-    records = OperationTime.objects.all()
-    if records:
-        for i, record in enumerate(records):
-            if record.power:
-                if i:
-                    if records[i - 1].power:
-                        record.time_for_Mwd = (record.to_time - record.from_time).total_seconds() / 60 * log(2) / abs(
-                            log(record.power / records[i - 1].power)) / log(2) * abs(
-                            1 - records[i - 1].power / record.power)
-                    else:
-                        record.time_for_Mwd = 1 / log(2)
-                else:
-                    record.time_for_Mwd = 1 / log(2)
-            else:  # cong suat hien tai 0%
-                record.time_for_Mwd = 0
-            if i and records[i - 1].power:
-                records[i - 1].time_for_Mwd += (record.from_time - records[i - 1].to_time).total_seconds() / 60
-                records[i - 1].MWd = records[i - 1].power * records[i - 1].time_for_Mwd / 1440000
-                records[i - 1].save()
-        record.save()
+def append_data_from_file(request):
+    return index(request)

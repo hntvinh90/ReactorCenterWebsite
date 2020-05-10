@@ -1,10 +1,16 @@
 from django.db import models
-from django.contrib.auth.models import User
+
+from datetime import datetime
+
+
+USING_DATABASE = 'events'
+
 
 # Create your models here.
 class Event(models.Model):
-    date = models.DateField()
-    description = models.TextField()
+    from_date = models.DateField()
+    to_date = models.DateField()
+    description = models.TextField()  # mo ta duong dan toi file anh, cac image cach nhau boi dau xuong dong (enter)
+
+    # Add filters
     incident = models.BooleanField(default=False)
-    date_added = models.DateTimeField(auto_now=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)

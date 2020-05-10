@@ -1,0 +1,11 @@
+// Dung cho kieu float {}
+.clearfix::after{content:"";clear:both;display:table;}
+
+// color for form error {}
+.invalid-feedback{color:red;}
+
+// Duong phan chia giua form va ket qua nhan duoc {}
+.hr-divider{border:1px solid #0275d8;}
+
+// Show multi-space {}
+.multi-space{white-space:pre;}

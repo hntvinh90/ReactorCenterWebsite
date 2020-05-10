@@ -14,18 +14,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include, reverse
-from django.shortcuts import redirect
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', lambda request: redirect(reverse('homepage:index'))),
-    path('homepage/', include('HomePage.urls', 'homepage')),
+    path('', include('HomePage.urls', 'homepage')),
     path('accounts/', include('Accounts.urls', 'accounts')),
     path('events/', include('Events.urls', 'events')),
     path('operation_timing/', include('OperationTiming.urls', 'operation_timing')),
+    path('excess_reactivity/', include('ExcessReactivity.urls', 'excess_reactivity')),
     path('library/', include('Library.urls', 'library')),
 ]
 

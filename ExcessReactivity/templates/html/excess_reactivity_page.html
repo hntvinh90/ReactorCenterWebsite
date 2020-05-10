@@ -1,0 +1,185 @@
+{% extends 'static/html/mainframe.html' %}
+
+{% load bootstrap4 %}
+
+{% block main_content %}
+    <!-- TITLE -->
+    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>ĐỘ PHẢN ỨNG DỰ TRỮ</b></h4></div>
+    <!-- /TITLE -->
+
+    <!-- FORM -->
+    {% if data_from_file %}
+        {% if user.is_superuser %} {# is_superuser is_authenticated #}
+            <a href="{% url 'excess_reactivity:append_data_from_file' %}">
+                Thêm dữ liệu từ file
+            </a>
+            </br></br>
+        {% endif %}
+    {% endif %}
+
+    <div class="clearfix">
+        <div style="float:left; width:25%">&nbsp;</div>
+        <div style="float:left; width:50%;">
+            <form action="{% url 'excess_reactivity:query' %}" method='get' class="form">
+                {% bootstrap_form query_form %}
+                {% buttons %}
+                    <button name="submit" class="btn btn-primary">Xem</button>
+                {% endbuttons %}
+            </form>
+        </div>
+    </div>
+    <!-- /FORM -->
+
+    <!-- SHOW QUERIED DATA -->
+    {% if send_data|default:'' %}
+        <hr class="hr-divider" />
+        <a href="#" onclick="print_element()">
+            <button class="btn btn-primary" >
+                <span class="glyphicon glyphicon-print"></span> In
+            </button>
+        </a>
+        <hr/>
+
+        <div id="id_for_printing">
+            <style>
+                th {
+                    text-align:center !important;
+                    vertical-align:middle !important;
+                    border:1px solid !important;
+                }
+                td {
+                    text-align:center !important;
+                    border:1px solid !important;
+                }
+            </style>
+            <div class="table-responsive">
+                <table class="table table-condensed">
+                    <thead style="display:table-header-group;">
+                        <tr>
+                            <th rowspan="2">CÁC ĐỢT</br>CHẠY LÒ</br>TRONG</br><span style="color:red;">NĂM {{request.GET.year}}</span></th>
+                            <th colspan="3">Ở công suất 0.5%</br>khi không có mẫu chiếu</th>
+                            <th colspan="3">Ở công suất 0.5%</br>khi có mẫu chiếu</th>
+                            <th colspan="3">Ở công suất 100%</br>đầu đợt chạy lò</th>
+                            <th colspan="3">Ở công suất 100%</br>cuối đợt chạy lò</th>
+                        </tr>
+                        <tr>
+                            <th>Vị trí</br>4BT</br>[mm]</th>
+                            <th>Vị trí</br>AT</br>[mm]</th>
+                            <th>Độ</br>phản</br>ứng</br>dự trữ</br>[&beta;<sub>eff</sub>]</th>
+                            <th>Vị trí</br>4BT</br>[mm]</th>
+                            <th>Vị trí</br>AT</br>[mm]</th>
+                            <th>Độ</br>phản</br>ứng</br>dự trữ</br>[&beta;<sub>eff</sub>]</th>
+                            <th>Vị trí</br>4BT</br>[mm]</th>
+                            <th>Vị trí</br>AT</br>[mm]</th>
+                            <th>Độ</br>phản</br>ứng</br>dự trữ</br>[&beta;<sub>eff</sub>]</th>
+                            <th>Vị trí</br>4BT</br>[mm]</th>
+                            <th>Vị trí</br>AT</br>[mm]</th>
+                            <th>Độ</br>phản</br>ứng</br>dự trữ</br>[&beta;<sub>eff</sub>]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in send_data %}
+                            <tr>
+                                <td>{{ record.date }}</td>
+                                <td>
+                                    {% if record.power05_without_target_4SR %}
+                                        {{ record.power05_without_target_4SR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.power05_without_target_AR %}
+                                        {{ record.power05_without_target_AR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <b>
+                                        {% if record.power05_without_target_ER %}
+                                            {{ record.power05_without_target_ER }}
+                                        {% else %}
+                                            <span>-</span>
+                                        {% endif %}
+                                    </b>
+                                </td>
+                                <td>
+                                    {% if record.power05_4SR %}
+                                        {{ record.power05_4SR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.power05_AR %}
+                                        {{ record.power05_AR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <b>
+                                        {% if record.power05_ER %}
+                                            {{ record.power05_ER }}
+                                        {% else %}
+                                            <span>-</span>
+                                        {% endif %}
+                                    </b>
+                                </td>
+                                <td>
+                                    {% if record.power100_start_4SR %}
+                                        {{ record.power100_start_4SR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.power100_start_AR %}
+                                        {{ record.power100_start_AR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <b>
+                                        {% if record.power100_start_ER %}
+                                            {{ record.power100_start_ER }}
+                                        {% else %}
+                                            <span>-</span>
+                                        {% endif %}
+                                    </b>
+                                </td>
+                                </td>
+                                <td>
+                                    {% if record.power100_end_4SR %}
+                                        {{ record.power100_end_4SR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if record.power100_end_AR %}
+                                        {{ record.power100_end_AR }}
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <b>
+                                        {% if record.power100_end_ER %}
+                                            {{ record.power100_end_ER }}
+                                        {% else %}
+                                            <span>-</span>
+                                        {% endif %}
+                                    </b>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+    <!-- /SHOW QUERIED DATA -->
+{% endblock %}

@@ -3,20 +3,111 @@
 {% load bootstrap4 %}
 
 {% block main_content %}
-    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>NHẬT KÝ VẬN HÀNH</b></h4></div>
-    {% if user.is_authenticated %}
-        <a href="{% url 'events:add_event' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-plus"></span> Thêm mới</a>
-        </br></br>
+    <!-- TITLE -->
+    <div class="text-primary" style="text-align:center;margin-top:20px;">
+        <h4><b>NHẬT KÝ VẬN HÀNH</b></h4>
+    </div>
+    <!-- /TITLE -->
+
+    <!-- FORM -->
+    {% if data_from_file %}
+        {% if user.is_superuser %} {# is_superuser is_authenticated #}
+            <a href="{% url 'events:append_data_from_file' %}">
+                Thêm dữ liệu từ file
+            </a>
+            </br></br>
+        {% endif %}
     {% endif %}
-    <a href="{% url 'events:query_event' %}"><span class="glyphicon glyphicon-calendar"></span> Xem toàn bộ</a>
-    <hr/>
-    <form action="{% url 'events:query_event' %}" method='get' class="form">
-        {% bootstrap_form query_form %}
-        {% buttons %}
-            <button name="submit" class="btn btn-primary">Xem</button>
-        {% endbuttons %}
-    </form>
+    <div class="clearfix">
+        <div style="float:left; margin:20px 20px 0px 0px; width:25%;">
+            <!-- Mot so chuc nang cho form -->
+            <a href="#" onclick="fill_today()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Hôm nay
+                </p>
+            </a>
+            <a href="#" onclick="fill_this_month()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Tháng này
+                </p>
+            </a>
+            <a href="#" onclick="fill_this_year()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Năm này
+                </p>
+            </a>
+            <a href="#" onclick="fill_all_date_in_database()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Toàn bộ thời gian có trong cơ sở dữ liệu
+                </p>
+            </a>
+            <!-- /Mot so chuc nang cho form -->
+        </div>
+
+        <div style="float:left; width:50%;">
+            <form action="{% url 'events:query' %}" method='get' class="form">
+                {% bootstrap_form query_form %}
+                {% buttons %}
+                    <button name="submit" class="btn btn-primary">Xem</button>
+                {% endbuttons %}
+            </form>
+        </div>
+    </div>
+    <!-- /FORM -->
+
     {% if events|default:'' %}
         {% include './__listingEvents.html' %}
     {% endif %}
+
+    <!-- SHOW QUERIED DATA -->
+    <!-- /SHOW QUERIED DATA -->
+
+    <script>
+        function fill_today(){
+            var today = new Date();
+            $('#id_fromDate').val(
+                today.getFullYear() + '-' +
+                String(today.getMonth() + 1).leftJustify(2, '0') + '-' +
+                String(today.getDate()).leftJustify(2, '0')
+            );
+            $('#id_toDate').val(
+                today.getFullYear() + '-' +
+                String(today.getMonth() + 1).leftJustify(2, '0') + '-' +
+                String(today.getDate()).leftJustify(2, '0')
+            );
+        }
+
+        function fill_this_month(){
+            var today = new Date();
+            var the_last_of_month = new Date(today.getFullYear(), today.getMonth()+1, 0);
+            $('#id_fromDate').val(
+                today.getFullYear() + '-' + String(today.getMonth() + 1).leftJustify(2, '0') + '-' + '01'
+            );
+            $('#id_toDate').val(
+                the_last_of_month.getFullYear() + '-' +
+                String(the_last_of_month.getMonth() + 1).leftJustify(2, '0') + '-' +
+                String(the_last_of_month.getDate()).leftJustify(2, '0')
+            );
+        }
+
+        function fill_this_year(){
+            var this_year = new Date().getFullYear();
+            $('#id_fromDate').val(
+                this_year + '-01-01'
+            );
+            $('#id_toDate').val(
+                this_year + '-12-31'
+            );
+        }
+
+        function fill_all_date_in_database(){
+
+            $('#id_fromDate').val(
+                '{{ first_day|date:"Y-m-d" }}'
+            );
+            $('#id_toDate').val(
+                '{{ last_day|date:"Y-m-d" }}'
+            );
+        }
+    </script>
 {% endblock %}

@@ -8,17 +8,13 @@
     {% load static %}
 
     <link rel="icon" href="{%static 'images/favicon.ico'%}"/>
-    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}"/>
-    <style>
-        .clearfix::after {
-            content: "";
-            clear: both;
-            display: table;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/myCSS.css' %}"/>
 
-    <script src="{% static 'js/jquery.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <!-- BOOTSTRAP -->
+    <link rel="stylesheet" href="{% static 'bootstrap/bootstrap.min.css' %}"/>
+    <script src="{% static 'jquery/jquery.js' %}"></script>
+    <script src="{% static 'bootstrap/bootstrap.min.js' %}"></script>
+    <!-- /BOOTSTRAP -->
 
     <title>Trung Tâm Lò Phản Ứng</title>
 </head>
@@ -39,6 +35,7 @@
         {% block main_content %}{% endblock %}
     </div>
 
+    <script src="{% static 'js/myJS.js' %}"></script>
     <script>
         $(document).ready(function(){
             // Di chuyen noi dung cua cac phan tu co ten class la 'movetobody' toi body

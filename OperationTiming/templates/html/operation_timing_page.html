@@ -3,38 +3,73 @@
 {% load bootstrap4 %}
 
 {% block main_content %}
-    <div class="text-primary" style="text-align:center;margin-top:20px;"><h4><b>THỐNG KÊ</b></h4></div>
-    <div class="text-primary" style="text-align:center;"><h4><b>THỜI GIAN VẬN HÀNH</b></h4></div>
-    {% if user.is_authenticated %} {# is_superuser #}
-        <a href="{% url 'operation_timing:add' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-plus"></span> Thêm mới</a>
-        </br></br>
-        <a class="text-danger" href="{% url 'operation_timing:delete' %}{{ for_saving_query }}"><span class="glyphicon glyphicon-minus"></span> Xóa</a>
-        </br></br>
-    {% endif %}
-    <a href="{% url 'operation_timing:query' %}"><span class="glyphicon glyphicon-calendar"></span> Xem toàn bộ</a>
-    <hr/>
-    <form action="{% url 'operation_timing:query' %}" method='get' class="form">
-        {% bootstrap_form query_form %}
-        {% buttons %}
-            <button name="submit" class="btn btn-primary">Xem</button>
-        {% endbuttons %}
-    </form>
-    {% if send_data|default:'' %}
-        <hr class=".bg-primary" style="border:1px solid #007bff;"/>
-        <a href="#" onclick="print_events()"><button class="btn btn-primary" ><span class="glyphicon glyphicon-print"></span> In</button></a>
-        <hr/>
-    {% else %}
-        {% if send_data_total|default:'' %}
-            <hr class=".bg-primary" style="border:1px solid #007bff;"/>
+    <!-- TITLE -->
+    <div class="text-primary" style="text-align:center;margin-top:20px;">
+        <h4><b>THỐNG KÊ</br>THỜI GIAN VẬN HÀNH</b></h4>
+    </div>
+    <!-- /TITLE -->
+
+    <!-- FORM -->
+    {% if data_from_file %}
+        {% if user.is_superuser %} {# is_superuser is_authenticated #}
+            <a href="{% url 'operation_timing:append_data_from_file' %}">
+                Thêm dữ liệu từ file
+            </a>
+            </br></br>
         {% endif %}
     {% endif %}
-    <div id="operation_timing">
+
+    <div class="clearfix">
+        <div style="float:left; margin:20px 20px 0px 0px; width:25%;">
+            <!-- Mot so chuc nang cho form -->
+            <a href="#" onclick="fill_this_month()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Tháng này
+                </p>
+            </a>
+            <a href="#" onclick="fill_this_year()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Năm này
+                </p>
+            </a>
+            <a href="#" onclick="fill_all_date_in_database()">
+                <p>
+                    <span class="glyphicon glyphicon-time"></span> Toàn bộ thời gian có trong cơ sở dữ liệu
+                </p>
+            </a>
+            <!-- /Mot so chuc nang cho form -->
+        </div>
+
+        <div style="float:left; width:50%;">
+            <form action="{% url 'operation_timing:query' %}" method='get' class="form">
+                {% bootstrap_form query_form %}
+                {% buttons %}
+                    <button name="submit" class="btn btn-primary">Xem</button>
+                {% endbuttons %}
+            </form>
+        </div>
+    </div>
+    <!-- /FORM -->
+
+
+    <!-- SHOW QUERIED DATA -->
+    {% if send_data|default:'' or send_data_total|default:'' %}
+        <hr class="hr-divider" />
+        <a href="#" onclick="print_element()">
+            <button class="btn btn-primary" >
+                <span class="glyphicon glyphicon-print"></span> In
+            </button>
+        </a>
+        <hr/>
+    {% endif %}
+    <div id="id_for_printing">
         <tt>
             {% if send_data|default:'' %}
                 <style>
                     th {
                         text-align:center !important;
-                        border: 1px solid !important;
+                        vertical-align:middle !important;
+                        border:1px solid !important;
                     }
                     td {
                         text-align:center !important;
@@ -47,7 +82,7 @@
                     <table class="table table-condensed">
                         <thead style="display:table-header-group;">
                             <tr>
-                                <th>Date</br>&nbsp;</th>
+                                <th>Date</th>
                                 <th>P x t</br>(kW) (min)</th>
                                 <th>&#8721; P.t</br>(MWd)</th>
                                 <th>&#8721;&#8721; P.t</br>(MWd)</th>
@@ -77,7 +112,7 @@
                                             {% endifequal %}
                                         </td>
                                         <td>
-                                            <span class="pre">{{ row.0|stringformat:".1f"|slice:":3" }} x {{ row.1|ljust:"5" }}</span>
+                                            <span class="multi-space">{{ row.0|stringformat:".1f"|slice:":3" }} x {{ row.1|ljust:"5" }}</span>
                                         </td>
                                         <td>
                                             {% if forloop.last %}
@@ -96,12 +131,12 @@
                                         </td>
                                         <td>
                                             {% if forloop.last %}
-                                                <span class="pre">{{ group.6|rjust:"5" }}</span>
+                                                <span class="multi-space">{{ group.6|rjust:"5" }}</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             {% if forloop.last %}
-                                                <span class="pre">{{ group.7|rjust:"7" }}</span>
+                                                <span class="multi-space">{{ group.7|rjust:"7" }}</span>
                                             {% endif %}
                                         </td>
                                     </tr>
@@ -113,37 +148,59 @@
                 </div>
             {% endif %}
             {% if send_data_total|default:'' %}
-                <style>
-                    .pre{
-                        white-space: pre;
-                    }
-                </style>
                 <div style="text-align:center;">
-                    <span><tt>*******************************************</tt></span>
+                    <span>***********************************************</span>
                     </br>
-                    <span class="pre"><tt>*{{ ""|rjust:"7" }}FROM {{ send_data_total.0|date:"m/d/y" }} TO {{ send_data_total.1|date:"m/d/y" }}{{ ""|rjust:"9" }}*</tt></span>
+                    <span class="multi-space">*{{ ""|rjust:"10" }}FROM {{ send_data_total.0|date:"m/d/y" }} TO {{ send_data_total.1|date:"m/d/y" }}{{ ""|rjust:"10" }}*</span>
                     </br>
-                    <span class="pre"><tt>*{{ ""|rjust:"7" }}-------------------------{{ ""|rjust:"9" }}*</tt></span>
+                    <span class="multi-space">*{{ ""|rjust:"10" }}-------------------------{{ ""|rjust:"10" }}*</span>
                     </br>
-                    <span class="pre"><tt>* Operation Time (at P &ge; 2.5 kW), h{{ send_data_total.2|stringformat:".0f"|rjust:"7" }}*</tt></span>
+                    <span class="multi-space">* Operation Time (at P &ge; 2.5 kW), h{{ send_data_total.2|stringformat:".0f"|rjust:"11" }}*</span>
                     </br>
-                    <span class="pre"><tt>* Release Thermal Energy, MWd{{ send_data_total.3|stringformat:".3f"|rjust:"13" }}*</tt></span>
+                    <span class="multi-space">* Release Thermal Energy, MWd{{ send_data_total.3|stringformat:".3f"|rjust:"17" }}*</span>
                     </br>
-                    <span class="pre"><tt>* Burn-up of U-235, g{{ send_data_total.4|stringformat:".3f"|rjust:"21" }}*</tt></span>
+                    <span class="multi-space">* Burn-up of U-235, g{{ send_data_total.4|stringformat:".3f"|rjust:"25" }}*</span>
                     </br>
-                    <span><tt>*******************************************</tt></span>
+                    <span>***********************************************</span>
                     </br></br>
                 </div>
             {% endif %}
         </tt>
     </div>
+    <!-- /SHOW QUERIED DATA -->
 
     <script>
-        function print_events(){
-            var temp = $('body').html();
-            $('body').html($('#operation_timing').html());
-            window.print()
-            $('body').html(temp);
+        function fill_this_month(){
+            var today = new Date();
+            var the_last_of_month = new Date(today.getFullYear(), today.getMonth()+1, 0);
+            $('#id_fromDate').val(
+                today.getFullYear() + '-' + String(today.getMonth() + 1).leftJustify(2, '0') + '-' + '01'
+            );
+            $('#id_toDate').val(
+                the_last_of_month.getFullYear() + '-' +
+                String(the_last_of_month.getMonth() + 1).leftJustify(2, '0') + '-' +
+                String(the_last_of_month.getDate()).leftJustify(2, '0')
+            );
+        }
+
+        function fill_this_year(){
+            var this_year = new Date().getFullYear();
+            $('#id_fromDate').val(
+                this_year + '-01-01'
+            );
+            $('#id_toDate').val(
+                this_year + '-12-31'
+            );
+        }
+
+        function fill_all_date_in_database(){
+
+            $('#id_fromDate').val(
+                '{{ first_day|date:"Y-m-d" }}'
+            );
+            $('#id_toDate').val(
+                '{{ last_day|date:"Y-m-d" }}'
+            );
         }
     </script>
 {% endblock %}
