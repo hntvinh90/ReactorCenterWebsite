@@ -16,9 +16,11 @@ class AddYearForm(forms.ModelForm):
 
 class QueryForm(forms.Form):
     # Get tat ca cac nam co trong database
-    data = []
-    years = ER_Years.objects.using(USING_DATABASE).order_by('-year')
-    if years:
-        for record in years:
-            data.append((record.year, record.year))
+    try:
+        data = []
+        years = ER_Years.objects.using(USING_DATABASE).order_by('-year')
+        if years:
+            for record in years:
+                data.append((record.year, record.year))
+    except: pass
     year = forms.ChoiceField(label='Năm', required=True, choices=data)
