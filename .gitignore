@@ -1,10 +1,11 @@
 **/__pycache__/
-**/database/
 venv/
 static_for_deploying/
 
 **/migrations/*
-media/*
+**/database/*
+
+media/library/*
 
 db.sqlite3
 
