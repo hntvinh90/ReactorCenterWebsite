@@ -42,7 +42,7 @@ def query(request):
         query_form = QueryForm()
 
     # Tranh tai du lieu qua nhieu => chia du lieu query thanh nhieu page
-    number_per_page = 10  # number of date to show in per page
+    number_per_page = 1  # number of date to show in per page
     if records:
         max_page = (len(records) - 1) // number_per_page
     else:
@@ -66,6 +66,13 @@ def query(request):
         'query_form': query_form,
         'max_page': max_page,
         'page_number': page_number,
+
+        # Luu lai noi dung request
+        'for_saving_query': '&'.join(['='.join([key, value]) for key, value in request.GET.items()]),
+
+        # Thoi gian co trong database
+        'first_day': Event.get_first_date(),
+        'last_day': Event.get_last_date(),
 
         # ON/OFF append_data_from_file
         'data_from_file': True,

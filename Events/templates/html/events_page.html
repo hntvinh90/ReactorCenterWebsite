@@ -55,11 +55,59 @@
     </div>
     <!-- /FORM -->
 
-    {% if events|default:'' %}
-        {% include './__listingEvents.html' %}
-    {% endif %}
-
     <!-- SHOW QUERIED DATA -->
+    {% if events %}
+        <hr class="hr-divider" />
+        <a href="" onclick="print_element()">
+            <button class="btn btn-primary">
+                <span class="glyphicon glyphicon-print"></span> In
+            </button>
+        </a>
+        <hr/>
+        <div id="id_for_printing">
+            <div id="image-gallery-3" class="cf" style="text-align:center;">
+                {% load custom_filters %}
+                {% for event in events %}
+                    {% for link in event.description|linebreaksbr|split:'<br>' %}
+                        <img src={{link}} data-high-res-src={{link}} alt="Image not found" class="pannable-image">
+                        <hr style="page-break-before: always"/>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- PAGE NUMBER -->
+        <hr/>
+        <div style="text-align:right;">
+            <ul class="pagination">
+                {% ifequal page_number 0 %}
+                    <li class="disabled"><span>&lt;&lt;</span></li>
+                    <li class="disabled"><span>&lt;</span></li>
+                {% else %}
+                    <li><a href="{% url 'events:query' %}?{{ for_saving_query }}&page_number=0">&lt;&lt;</a></li>
+                    <li><a href="{% url 'events:query' %}?{{ for_saving_query }}&page_number={{ page_number|add:-1 }}">&lt;</a></li>
+                {% endifequal %}
+                <li class="active"><span>{{ page_number|add:1 }}/{{ max_page|add:1 }}</span></li>
+                {% ifequal page_number max_page %}
+                    <li class="disabled"><span>&gt;</span></li>
+                    <li class="disabled"><span>&gt;&gt;</span></li>
+                {% else %}
+                    <li><a href="{% url 'events:query' %}?{{ for_saving_query }}&page_number={{ page_number|add:1 }}">&gt;</a></li>
+                    <li><a href="{% url 'events:query' %}?{{ for_saving_query }}&page_number={{ max_page }}">&gt;&gt;</a></li>
+                {% endifequal %}
+            </ul>
+        </div>
+        <!-- /PAGE NUMBER -->
+
+        <!-- LOAD IMAGE-VIEWER >
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'image_viewer/iv-viewer.min.css' %}"/>
+        <script src="{% static 'image_viewer/iv-viewer.min.js' %}"></script>
+        <script>
+            Array.from(document.querySelectorAll(".pannable-image")).forEach(elem => {new ImageViewer(elem);});
+        </script>
+        <!- /LOAD IMAGE-VIEWER -->
+    {% endif %}
     <!-- /SHOW QUERIED DATA -->
 
     <script>

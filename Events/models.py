@@ -14,3 +14,11 @@ class Event(models.Model):
 
     # Add filters
     incident = models.BooleanField(default=False)
+
+    @staticmethod
+    def get_first_date():
+        return Event.objects.using(USING_DATABASE).earliest('from_date').from_date
+
+    @staticmethod
+    def get_last_date():
+        return Event.objects.using(USING_DATABASE).latest('to_date').to_date
