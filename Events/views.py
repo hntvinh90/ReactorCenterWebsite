@@ -1,9 +1,9 @@
-from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.shortcuts import render
 
-from .models import USING_DATABASE, Event
 from .forms import QueryForm
+from .models import USING_DATABASE, Event
 
 
 # Create your views here.
@@ -105,6 +105,6 @@ def append_data_from_file(request):
                 record.save()
 
             # moving file to database
-            shutil.copy(os.path.join(root, file), os.path.join(data_path, file))
+            shutil.move(os.path.join(root, file), os.path.join(data_path, file))
         break
     return index(request)
