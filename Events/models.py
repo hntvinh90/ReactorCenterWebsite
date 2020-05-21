@@ -17,8 +17,14 @@ class Event(models.Model):
 
     @staticmethod
     def get_first_date():
-        return Event.objects.using(USING_DATABASE).earliest('from_date').from_date
+        try:
+            return Event.objects.using(USING_DATABASE).earliest('from_date').from_date
+        except:
+            return None
 
     @staticmethod
     def get_last_date():
-        return Event.objects.using(USING_DATABASE).latest('to_date').to_date
+        try:
+            return Event.objects.using(USING_DATABASE).latest('to_date').to_date
+        except:
+            return None

@@ -82,10 +82,11 @@ def query(request):
 
 @login_required(login_url='/events')
 def append_data_from_file(request):
-    import os, datetime
-    path = os.path.join('Events', 'database', 'add')
+    import os, datetime, shutil
+    data_path = os.path.join('Events', 'database')
+    new_data_path = os.path.join(data_path, 'add')
     date_format = '%Y%m%d'
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(new_data_path):
         files.sort()
         for file in files:
             data = file.split('_')
@@ -102,4 +103,8 @@ def append_data_from_file(request):
             if not created:
                 record.description = '\n'.join([record.description, file])
                 record.save()
+
+            # moving file to database
+            shutil.copy(os.path.join(root, file), os.path.join(data_path, file))
+        break
     return index(request)

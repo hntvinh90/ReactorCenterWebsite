@@ -70,7 +70,6 @@
                 {% for event in events %}
                     {% for link in event.description|linebreaksbr|split:'<br>' %}
                         <img src={{link}} data-high-res-src={{link}} alt="Image not found" class="pannable-image">
-                        <hr style="page-break-before: always"/>
                     {% endfor %}
                 {% endfor %}
             </div>
