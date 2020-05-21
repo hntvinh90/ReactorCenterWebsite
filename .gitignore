@@ -6,6 +6,7 @@ static_for_deploying/
 **/database/*
 
 media/library/*
+media/events/*
 
 db.sqlite3
 

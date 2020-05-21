@@ -83,8 +83,8 @@ def query(request):
 @login_required(login_url='/events')
 def append_data_from_file(request):
     import os, datetime, shutil
-    data_path = os.path.join('Events', 'database')
-    new_data_path = os.path.join(data_path, 'add')
+    data_path = os.path.join('media', 'events')
+    new_data_path = os.path.join('Events', 'database', 'add')
     date_format = '%Y%m%d'
     for root, _, files in os.walk(new_data_path):
         files.sort()
