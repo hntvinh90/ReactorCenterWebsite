@@ -43,7 +43,7 @@ def query(request):
         query_form = QueryForm()
 
     # Tranh tai du lieu qua nhieu => chia du lieu query thanh nhieu page
-    number_per_page = 1  # number of date to show in per page
+    number_per_page = 10  # number of date to show in per page
     if records:
         max_page = (len(records) - 1) // number_per_page
     else:

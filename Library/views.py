@@ -15,6 +15,8 @@ def send_path(path=[]):
     """
 
     for root, dirs, files in os.walk(os.path.join(settings.LIBRARY_ROOT, os.sep.join(path))):
+        if 'readme.md' in files:
+            files.remove('readme.md')
         if dirs or files:
             dirs.sort()
             files.sort()
@@ -59,10 +61,13 @@ def search(request):
                         match += 1
                 if match:
                     received_files[-match].append(os.path.join(root, file).replace(settings.LIBRARY_ROOT+os.sep, '').replace(os.sep, '/'))
-        return render(
-            request, 'html/library_page.html',
-            {'dirs': [], 'files': [file for files in received_files for file in files], 'content': content} if received_files else {'empty': 'True'}
-        )
+        files = [f for fs in received_files for f in fs]
+        if files:
+            context = {'files': files}
+        else:
+            context = {'empty': 'True'}
+        context['content'] = content
+        return render(request, 'html/library_page.html', context)
     else:
         return redirect(reverse('library:index'))
 
