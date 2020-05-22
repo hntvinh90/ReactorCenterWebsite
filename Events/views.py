@@ -31,6 +31,7 @@ def query(request):
             records = Event.objects.using(USING_DATABASE).filter(
                 Q(from_date__gte=data['fromDate'], from_date__lte=data['toDate'])
                 | Q(to_date__gte=data['fromDate'], to_date__lte=data['toDate'])
+                | Q(from_date__lte=data['fromDate'], to_date__gte=data['toDate'])
             ).order_by('from_date')
 
             # Neu request yeu cau thong tin ve cac su co
