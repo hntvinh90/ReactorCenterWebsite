@@ -24,8 +24,8 @@ def query(request):
         if query_form.is_valid():
             data = query_form.cleaned_data
 
-            # Xu ly khi nguoi dung nhap fromDate > toDate
-            if data['fromDate'] > data['toDate']:
+            # Xu ly khi toDate khong duoc nhap hoac nguoi dung nhap fromDate > toDate
+            if not request.GET.get('toDate', '') or data['fromDate'] > data['toDate']:
                 data['toDate'] = data['fromDate']
 
             records = Event.objects.using(USING_DATABASE).filter(
