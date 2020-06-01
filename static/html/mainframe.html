@@ -36,16 +36,5 @@
     </div>
 
     <script src="{% static 'js/myJS.js' %}"></script>
-    <script>
-        $(document).ready(function(){
-            // Di chuyen noi dung cua cac phan tu co ten class la 'movetobody' toi body
-            // Function nay giai quyet van de khi su dung Modal trong Bootstrap
-            $('.movetobody').each(function(){
-                var content = $(this).html();
-                $(this).html('');
-                $('body').append(content);
-            });
-        });
-    </script>
 </body>
 </html>
