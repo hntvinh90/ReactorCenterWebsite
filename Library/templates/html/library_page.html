@@ -91,7 +91,7 @@
             $(".folder").css("display", "none");
 
             // Get path
-            var path_to_send = $(obj).data('folder-address');
+            var path_to_send = String($(obj).data('folder-address'));
 
             // modify showed_path
             $("#showed_path").html("");
