@@ -1,0 +1,21 @@
+{% load static %}
+
+<div class="modal" id="loading">
+    <div class="modal-dialog modal-sm">
+        <div style="text-align:center;">
+            <img src="{%static 'images/loading.gif'%}" width="128" height="128"/>
+        </div>
+    </div>
+</div>
+
+<script>
+    $('#loading').modal({
+        show: "true",
+        backdrop: "static",
+    });
+    /*
+    $(window).on('load', function(event){
+        $('#loading').modal("hide");
+    });
+    //*/
+</script>
