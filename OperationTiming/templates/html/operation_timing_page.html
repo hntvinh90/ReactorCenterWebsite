@@ -71,15 +71,18 @@
                         vertical-align:middle !important;
                         border:1px solid !important;
                     }
-                    td {
+                    .border td {
                         text-align:center !important;
                         border-left: 1px solid !important;
                         border-right: 1px solid !important;
                         border-top: none !important;
                     }
+                    .borderless td {
+                        text-align:center !important;
+                        border-top: none !important;
                 </style>
                 <div class="table-responsive">
-                    <table class="table table-condensed">
+                    <table class="table table-condensed border">
                         <thead style="display:table-header-group;">
                             <tr>
                                 <th>Date</th>
@@ -148,22 +151,25 @@
                 </div>
             {% endif %}
             {% if send_data_total|default:'' %}
-                <div style="text-align:center;">
-                    <span>***********************************************</span>
-                    </br>
-                    <span class="multi-space">*{{ ""|rjust:"10" }}FROM {{ send_data_total.0|date:"m/d/y" }} TO {{ send_data_total.1|date:"m/d/y" }}{{ ""|rjust:"10" }}*</span>
-                    </br>
-                    <span class="multi-space">*{{ ""|rjust:"10" }}-------------------------{{ ""|rjust:"10" }}*</span>
-                    </br>
-                    <span class="multi-space">* Operation Time (at P &ge; 2.5 kW), h{{ send_data_total.2|stringformat:".0f"|rjust:"11" }}*</span>
-                    </br>
-                    <span class="multi-space">* Release Thermal Energy, MWd{{ send_data_total.3|stringformat:".3f"|rjust:"17" }}*</span>
-                    </br>
-                    <span class="multi-space">* Burn-up of U-235, g{{ send_data_total.4|stringformat:".3f"|rjust:"25" }}*</span>
-                    </br>
-                    <span>***********************************************</span>
-                    </br></br>
-                </div>
+            <div class="table-responsive" style="margin:0 auto;">
+                <table class="table borderless">
+                    <tr><td>
+                        <span>***********************************************</span>
+                        </br>
+                        <span class="multi-space">*{{ ""|rjust:"10" }}FROM {{ send_data_total.0|date:"m/d/y" }} TO {{ send_data_total.1|date:"m/d/y" }}{{ ""|rjust:"10" }}*</span>
+                        </br>
+                        <span class="multi-space">*{{ ""|rjust:"10" }}-------------------------{{ ""|rjust:"10" }}*</span>
+                        </br>
+                        <span class="multi-space">* Operation Time (at P &ge; 2.5 kW), h{{ send_data_total.2|stringformat:".0f"|rjust:"11" }}*</span>
+                        </br>
+                        <span class="multi-space">* Release Thermal Energy, MWd{{ send_data_total.3|stringformat:".3f"|rjust:"17" }}*</span>
+                        </br>
+                        <span class="multi-space">* Burn-up of U-235, g{{ send_data_total.4|stringformat:".3f"|rjust:"25" }}*</span>
+                        </br>
+                        <span>***********************************************</span>
+                    </td></tr>
+                </table>
+            </div>
             {% endif %}
         </tt>
     </div>

@@ -11,4 +11,4 @@ media/events/*
 db.sqlite3
 
 !**/__init__.py
-!**/*.md
+!**/readme.md

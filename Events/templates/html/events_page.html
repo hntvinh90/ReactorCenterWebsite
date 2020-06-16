@@ -65,11 +65,11 @@
         </a>
         <hr/>
         <div id="id_for_printing">
-            <div id="image-gallery-3" class="cf" style="text-align:center;">
+            <div>
                 {% load custom_filters %}
                 {% for event in events %}
                     {% for link in event.description|linebreaksbr|split:'<br>' %}
-                        <img src=/media/events/{{link}} data-high-res-src={{link}} alt="Image not found" class="pannable-image">
+                        <img src=/media/events/{{link}} alt="Image not found" class="img-responsive" style="margin:0 auto;">
                     {% endfor %}
                 {% endfor %}
             </div>
@@ -98,14 +98,6 @@
         </div>
         <!-- /PAGE NUMBER -->
 
-        <!-- LOAD IMAGE-VIEWER >
-        {% load static %}
-        <link rel="stylesheet" href="{% static 'image_viewer/iv-viewer.min.css' %}"/>
-        <script src="{% static 'image_viewer/iv-viewer.min.js' %}"></script>
-        <script>
-            Array.from(document.querySelectorAll(".pannable-image")).forEach(elem => {new ImageViewer(elem);});
-        </script>
-        <!- /LOAD IMAGE-VIEWER -->
     {% endif %}
     <!-- /SHOW QUERIED DATA -->
 
