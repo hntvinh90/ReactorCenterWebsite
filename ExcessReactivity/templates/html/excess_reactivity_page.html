@@ -180,6 +180,160 @@
                 </table>
             </div>
         </div>
-    {% endif %}
+    
     <!-- /SHOW QUERIED DATA -->
+    
+    <!-- SHOW AVAILABLE QUERIED FILES -->
+    {% else %}
+        {% if empty|default:"" %}
+        {% else %}
+            <div style="border-width:2px;border-style:solid;border-radius:10px;border-color:#0275d8;margin-bottom:20px;">
+            
+                <div class="text-primary" style="margin-left:20px;">
+                    </br>CÁC FILE ĐÃ ĐƯỢC THỐNG KÊ</br></br>
+                </div>
+
+                <!-- SHOWED PATH -->
+                <ol class="breadcrumb" style="float:left;margin-bottom:10px;background-color:#0275d8;color:#fff;" id="showed_path">
+                    <li><span class="glyphicon glyphicon-home"></span> Home</li>
+                </ol>
+
+                <!-- FILES and FOLDERS -->
+                <div class="table-responsive folder" data-folder-address="">
+                    <table class="table table-hover table-bordered">
+                        {% for dir in dirs %}
+                            <tr>
+                                <td data-folder-address="{{ dir }}" onclick="get_subFolder(this)">
+                                    <a href="#">
+                                        <div style="width:100%;">
+                                            <span class="glyphicon glyphicon-folder-open"></span> {{ dir }}
+                                        </div>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        {% for file in files %}
+                            <tr>
+                                <td>
+                                    <div class="clearfix">
+                                        <div style="float:left;"><span class="glyphicon glyphicon-file"></span> {{ file }}</div>
+                                        <div style="float:right;">
+                                            <a target="_blank" href="/media/excessreactivity/{{ file }}" download>
+                                                <span class="glyphicon glyphicon-save"></span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div id="the_last"></div>
+            </div>
+        {% endif %}
+    {% endif %}
+    <!-- /SHOW AVAILABLE QUERIED FILES -->
+    
+    <script>
+        function get_subFolder(obj){
+            // An cac thu muc
+            $(".folder").css("display", "none");
+
+            // Get path
+            var path_to_send = String($(obj).data('folder-address'));
+
+            // modify showed_path
+            $("#showed_path").html("");
+            if (path_to_send===""){
+                $("#showed_path").html(
+                    '<li><span class="glyphicon glyphicon-home"></span> Home</li>'
+                );
+            } else {
+                var folders = path_to_send.split("/");
+                var temp_folders = [];
+                var folder_number = folders.length - 1;
+                var html =  '<li data-folder-address="" onclick="get_subFolder(this)">' +
+                                '<a href="#" style="color:#fff;">' +
+                                    '<span class="glyphicon glyphicon-home"></span> Home'+
+                                '</a>' +
+                            '</li>';
+                for (var i in folders){
+                    temp_folders.push(folders[i]);
+                    if (i<folder_number){
+                        html += '<li data-folder-address="' + temp_folders.join("/") + '" onclick="get_subFolder(this)">' +
+                                    '<a href="#" style="color:#fff;">' +
+                                        folders[i] +
+                                    '</a>' +
+                                '</li>';
+                    }
+                }
+                // Thu muc cuoi cung khong phai la link
+                $("#showed_path").html(html + '<li>' + folders[folder_number] + '</li>');
+            }
+
+            // Check xem thu muc co san khong
+            // Neu khong co san moi phai send request
+            var unavailable = true;
+            $(".folder").each(function(){
+                if ($(this).data('folder-address') === path_to_send){
+                    $(this).css("display", "");
+                    unavailable = false;
+                }
+            });
+            if (unavailable){
+                // AJAX POST
+                $.ajax({
+                    url: '{%url "excess_reactivity:get_files_and_folders"%}',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}',
+                        'path': path_to_send
+                    },
+                    type: 'POST',
+                    success: function(data){
+                        if(data.path){
+                            received_path = JSON.parse(data.path);
+                            var html =  '<div class="table-responsive folder" data-folder-address="' + path_to_send + '">' +
+                                            '<table class="table table-hover table-bordered">';
+                            if (received_path.empty||""){
+                                html += '<tr>' +
+                                            '<td><b>Thư mục trống</b></td>' +
+                                        '</tr>';
+                            }else{
+                                received_path.dirs.forEach(function(dir){
+                                    html += '<tr>' +
+                                                '<td data-folder-address="'+path_to_send+'/'+dir+'" onclick="get_subFolder(this)">' +
+                                                    '<a href="#">' +
+                                                        '<div style="width:100%;">' +
+                                                            '<span class="glyphicon glyphicon-folder-close"></span> '+dir +
+                                                        '</div>' +
+                                                    '</a>' +
+                                                '</td>' +
+                                            '</tr>';
+                                });
+                                received_path.files.forEach(function(file){
+                                    html += '<tr>' +
+                                                '<td>' +
+                                                    '<div class="clearfix">' +
+                                                        '<div style="float:left;"><span class="glyphicon glyphicon-file"></span> '+file+'</div>' +
+                                                        '<div style="float:right;"><a target="_blank" href="/media/excessreactivity/'+path_to_send+'/'+file+'"><span class="glyphicon glyphicon-save"></span></a></div>' +
+                                                    '</div>' +
+                                                '</td>' +
+                                            '</tr>';
+                                });
+                            }
+                            $("#the_last").before(html +
+                                '    </table>' +
+                                '</div>'
+                            );
+                        }else{
+                            alert("Không thể nhận dữ liệu từ server");
+                        }
+                    },
+                    error: function(){
+                        alert("Có lỗi xảy ra nhưng chưa xác định được");
+                    }
+                });
+            }
+        }
+    </script>
 {% endblock %}

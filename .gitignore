@@ -7,6 +7,8 @@ static_for_deploying/
 
 media/library/*
 media/events/*
+media/operationtiming/*
+media/excessreactivity/*
 
 db.sqlite3
 
