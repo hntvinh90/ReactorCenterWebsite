@@ -13,4 +13,5 @@ function print_element(){
     $('body').html($('#id_for_printing').html());
     window.print();
     $('body').html(temp);
+    $('#loading').modal("hide");
 }
